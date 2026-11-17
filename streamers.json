@@ -1,0 +1,11 @@
+{
+  "game_keywords": ["grand theft auto vi", "gta vi", "gta 6", "gta6"],
+  "streamers": [
+    {
+      "name": "example_streamer",
+      "twitch": "example_streamer",
+      "kick": "",
+      "youtube": ""
+    }
+  ]
+}
