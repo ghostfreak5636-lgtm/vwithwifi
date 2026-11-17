@@ -1,1 +1,114 @@
+name: ClipBot
 
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: "Streamer VOD or clip URL (Twitch works best)"
+        required: true
+      streamer:
+        description: "Streamer name (credited in the description)"
+        required: true
+      topic:
+        description: "Topic / game tag"
+        default: "GTA 6"
+      start:
+        description: "Start time in the VOD (HH:MM:SS)"
+        default: "00:00:00"
+      minutes:
+        description: "How many minutes of the VOD to scan (0 = whole video)"
+        default: "60"
+      clips:
+        description: "How many clips to make"
+        default: "5"
+      clip_seconds:
+        description: "Length of each clip in seconds"
+        default: "40"
+      privacy:
+        description: "Upload privacy"
+        type: choice
+        options: [private, unlisted, public]
+        default: private
+      gap_minutes:
+        description: "Schedule clips this many minutes apart (0 = publish immediately per privacy)"
+        default: "0"
+      captions:
+        description: "Burn in captions (Whisper)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install ffmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Write cookies (optional)
+        env:
+          COOKIES: ${{ secrets.YT_COOKIES }}
+        run: |
+          if [ -n "$COOKIES" ]; then printf '%s' "$COOKIES" > cookies.txt; fi
+
+      - name: Make and upload clips
+        env:
+          VIDEO_URL: ${{ inputs.video_url }}
+          STREAMER: ${{ inputs.streamer }}
+          TOPIC: ${{ inputs.topic }}
+          START: ${{ inputs.start }}
+          MINUTES: ${{ inputs.minutes }}
+          CLIPS: ${{ inputs.clips }}
+          CLIP_SECONDS: ${{ inputs.clip_seconds }}
+          PRIVACY: ${{ inputs.privacy }}
+          GAP: ${{ inputs.gap_minutes }}
+          CAPTIONS: ${{ inputs.captions }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python clipper.py \
+            --url "$VIDEO_URL" \
+            --streamer "$STREAMER" \
+            --topic "$TOPIC" \
+            --start "$START" \
+            --minutes "$MINUTES" \
+            --clips "$CLIPS" \
+            --clip-seconds "$CLIP_SECONDS" \
+            --privacy "$PRIVACY" \
+            --gap-minutes "$GAP" \
+            --captions "$CAPTIONS"
+
+      - name: Keep rendered clips (3 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clips
+          path: out/
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Save state
+        if: always()
+        run: |
+          git config user.name "clipbot"
+          git config user.email "clipbot@users.noreply.github.com"
+          git add state/processed.json || true
+          git diff --cached --quiet || (git commit -m "clipbot state" && git push)

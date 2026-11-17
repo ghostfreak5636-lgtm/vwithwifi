@@ -1,0 +1,86 @@
+name: ClipBot Live
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Test only: detect, record and render, but do not upload"
+        type: boolean
+        default: false
+
+# Never run two at once (they would fight over state and quota)
+concurrency:
+  group: clipbot-live
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install ffmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Write cookies (optional)
+        env:
+          COOKIES: ${{ secrets.YT_COOKIES }}
+        run: |
+          if [ -n "$COOKIES" ]; then printf '%s' "$COOKIES" > cookies.txt; fi
+
+      - name: Watch streamers, record, clip, upload
+        env:
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Optional repo variables (Settings > Secrets and variables > Actions > Variables)
+          UPLOAD_PRIVACY: ${{ vars.UPLOAD_PRIVACY || 'private' }}
+          DAILY_CAP: ${{ vars.DAILY_CAP || '6' }}
+          RECORD_MINUTES: ${{ vars.RECORD_MINUTES || '20' }}
+          MAX_PER_RUN: ${{ vars.MAX_PER_RUN || '2' }}
+          MIN_SCORE: ${{ vars.MIN_SCORE || '1.2' }}
+          CLIP_SECONDS: ${{ vars.CLIP_SECONDS || '40' }}
+          TOPIC: ${{ vars.TOPIC || 'GTA 6' }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python live.py --dry-run
+          else
+            python live.py
+          fi
+
+      - name: Keep rendered clips (2 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-clips
+          path: out/
+          retention-days: 2
+          if-no-files-found: ignore
+
+      - name: Save state
+        if: always()
+        run: |
+          git config user.name "clipbot"
+          git config user.email "clipbot@users.noreply.github.com"
+          git add state/live.json || true
+          git diff --cached --quiet || (git commit -m "clipbot live state" && git pull --rebase -q && git push)
