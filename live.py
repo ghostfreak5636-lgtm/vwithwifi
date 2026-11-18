@@ -195,10 +195,40 @@ def youtube_live(handle, keywords):
     return None
 
 
+def norm_streamers(items):
+    """Accept plain names ("Lacy", "Dasgasd3m (Dom)") or full dicts. Name -> Twitch login."""
+    out = []
+    for s in items:
+        if isinstance(s, str):
+            n = re.sub(r"\(.*?\)", "", s).strip().lower().replace(" ", "")
+            if n:
+                out.append({"name": n, "twitch": n})
+        elif isinstance(s, dict) and s.get("name"):
+            out.append(s)
+    return out
+
+
+def warn_unknown_logins(logins):
+    """Print which names are not real Twitch channels (typo / wrong login)."""
+    hdr = twitch_headers()
+    if not hdr or not logins:
+        return
+    try:
+        r = requests.get("https://api.twitch.tv/helix/users", params=[("login", l) for l in logins[:100]],
+                         headers=hdr, timeout=20)
+        known = {u["login"].lower() for u in r.json().get("data", [])}
+        bad = [l for l in logins if l.lower() not in known]
+        if bad:
+            print("WARNING: not found on Twitch (check spelling, use the name in twitch.tv/<name>):", bad)
+    except Exception as e:
+        print("login check failed:", e)
+
+
 def find_live(cfg, state=None, max_streams=4):
     keywords = cfg.get("game_keywords", ["gta 6"])
-    streamers = [s for s in cfg.get("streamers", []) if s.get("name")]
+    streamers = norm_streamers(cfg.get("streamers", []))
     twitch_map = {s["twitch"].lower(): s["name"] for s in streamers if s.get("twitch")}
+    warn_unknown_logins(list(twitch_map))
     live = {}
     try:
         for login, info in twitch_live(list(twitch_map), keywords).items():
