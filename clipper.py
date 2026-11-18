@@ -64,6 +64,25 @@ def save_state(state):
     STATE.write_text(json.dumps(state, indent=2))
 
 
+
+# ---------- affiliate block ----------
+def affiliate_block():
+    """Description footer with one affiliate link + a clear disclosure.
+    Pick the link with AFFILIATE_KEY (a key from affiliates.json, default 'default').
+    Turn off with AFFILIATE=false."""
+    if os.environ.get("AFFILIATE", "true").lower() == "false":
+        return ""
+    try:
+        links = json.loads(Path("affiliates.json").read_text())
+    except Exception:
+        return ""
+    key = os.environ.get("AFFILIATE_KEY", "default")
+    link = links.get(key) or links.get("default")
+    if not link:
+        return ""
+    return f"\n\n(Affiliate link, I may earn a commission) {link}"
+
+
 # ---------- 1. download ----------
 def download(url, start, minutes):
     WORK.mkdir(exist_ok=True)
@@ -289,6 +308,7 @@ def main():
             desc = (
                 f"Clip from {a.streamer}'s stream. Go support them!\n"
                 f"Original: {a.url}\n\n#{a.topic.replace(' ', '')} #shorts #gaming"
+                + affiliate_block()
             )
             tags = [a.topic, a.streamer, "shorts", "gaming", "clips"]
             publish_at = None
