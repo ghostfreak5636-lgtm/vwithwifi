@@ -78,6 +78,8 @@ jobs:
           PRIVACY: ${{ inputs.privacy }}
           GAP: ${{ inputs.gap_minutes }}
           CAPTIONS: ${{ inputs.captions }}
+          AFFILIATE: ${{ vars.AFFILIATE || 'true' }}
+          AFFILIATE_KEY: ${{ vars.AFFILIATE_KEY || 'default' }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}

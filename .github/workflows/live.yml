@@ -61,6 +61,11 @@ jobs:
           MIN_SCORE: ${{ vars.MIN_SCORE || '1.2' }}
           CLIP_SECONDS: ${{ vars.CLIP_SECONDS || '40' }}
           TOPIC: ${{ vars.TOPIC || 'GTA 6' }}
+          AFFILIATE: ${{ vars.AFFILIATE || 'true' }}
+          AFFILIATE_KEY: ${{ vars.AFFILIATE_KEY || 'default' }}
+          AUTO_RUN: ${{ vars.AUTO_RUN || 'true' }}
+          AUTO_SCHEDULE: ${{ vars.AUTO_SCHEDULE || 'true' }}
+          SCHEDULE_GAP_HOURS: ${{ vars.SCHEDULE_GAP_HOURS || '0' }}
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             python live.py --dry-run
