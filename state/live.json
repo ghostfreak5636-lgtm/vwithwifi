@@ -1,11 +1,12 @@
 {
   "uploads": {
-    "2026-11-17": 2
+    "2026-11-17": 3
   },
   "streamer_last": {
     "burn": 1794965500.4454012,
-    "officermesser": 1794965623.4862998
+    "officermesser": 1794965623.4862998,
+    "stableronaldo": 1794975150.3439562
   },
-  "last_publish_ts": 1794981697.9623003,
-  "last_upload_ts": 1794965623.4862983
+  "last_publish_ts": 1794996097.9623003,
+  "last_upload_ts": 1794975150.3439548
 }
