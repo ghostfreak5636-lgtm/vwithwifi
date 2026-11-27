@@ -1,6 +1,6 @@
 {
   "uploads": {
-    "2026-11-26": 4
+    "2026-11-26": 6
   },
   "streamer_last": {
     "burn": 1794965500.4454012,
@@ -26,8 +26,10 @@
     "shroud": 1795652851.6484077,
     "yourragegaming": 1795684454.4838586,
     "theburntpeanut": 1795684518.2760448,
-    "joe_bartolozzi": 1795720502.1517985
+    "joe_bartolozzi": 1795720502.1517985,
+    "pokelawls": 1795746276.7891402,
+    "avoidingthepuddle": 1795746341.6971931
   },
-  "last_publish_ts": 1795736613.6040869,
-  "last_upload_ts": 1795720502.1517973
+  "last_publish_ts": 1795765413.6040869,
+  "last_upload_ts": 1795746341.6971917
 }
